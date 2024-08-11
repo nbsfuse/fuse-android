@@ -115,9 +115,9 @@ android {
                 }
 
                 register("api34", ManagedVirtualDevice::class) {
-                    device = "Pixel 7"
+                    device = "Nexus One"
                     apiLevel = 34
-                    systemImageSource = "google"
+                    systemImageSource = "aosp-atd"
                 }
             }
         }
