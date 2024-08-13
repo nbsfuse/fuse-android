@@ -1,4 +1,4 @@
-name: Android CI
+name: API 29
 
 on:
   push:
