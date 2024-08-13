@@ -72,12 +72,6 @@ android {
 
         managedDevices {
             devices {
-                register("api27", ManagedVirtualDevice::class) {
-                    device = "Pixel 7"
-                    apiLevel = 27
-                    systemImageSource = "aosp"
-                }
-
                 register("api28", ManagedVirtualDevice::class) {
                     device = "Pixel 7"
                     apiLevel = 28
@@ -93,25 +87,25 @@ android {
                 register("api30", ManagedVirtualDevice::class) {
                     device = "Pixel 7"
                     apiLevel = 30
-                    systemImageSource = "aosp"
+                    systemImageSource = "aosp-atd"
                 }
 
                 register("api31", ManagedVirtualDevice::class) {
                     device = "Pixel 7"
                     apiLevel = 31
-                    systemImageSource = "aosp"
+                    systemImageSource = "aosp-atd"
                 }
 
                 register("api32", ManagedVirtualDevice::class) {
                     device = "Pixel 7"
                     apiLevel = 32
-                    systemImageSource = "aosp"
+                    systemImageSource = "aosp-atd"
                 }
 
                 register("api33", ManagedVirtualDevice::class) {
                     device = "Pixel 7"
                     apiLevel = 33
-                    systemImageSource = "aosp"
+                    systemImageSource = "aosp-atd"
                 }
 
                 register("api34", ManagedVirtualDevice::class) {
