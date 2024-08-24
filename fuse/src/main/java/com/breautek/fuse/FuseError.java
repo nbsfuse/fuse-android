@@ -22,7 +22,7 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class FuseError {
+public class FuseError extends Throwable {
     private final String $domain;
     private final int $code;
     private final String $message;
