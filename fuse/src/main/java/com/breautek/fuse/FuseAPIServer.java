@@ -166,6 +166,10 @@ public class FuseAPIServer {
         serverThread.start();
     }
 
+    public X509Certificate getCertificate() {
+        return $certificate.certificate;
+    }
+
     public SSLContext getSSLContext() {
         return $sslContext;
     }

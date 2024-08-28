@@ -19,7 +19,10 @@ package com.breautek.fuse.testtools;
 
 import androidx.annotation.Nullable;
 
+import java.io.IOException;
 import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -42,11 +45,46 @@ import com.googlecode.junittoolbox.PollingWait;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 public class FuseTestAPIClient {
+    private static class FuseTrustManager implements X509TrustManager {
+        private final X509Certificate $publicCert;
+
+        public FuseTrustManager(X509Certificate publicCert) {
+            $publicCert = publicCert;
+        }
+
+        private void $validate(X509Certificate[] chain, String authType) throws CertificateException {
+            if (chain == null || chain.length == 0) {
+                throw new CertificateException("Certificate chain is empty or null.");
+            }
+
+            if (!$publicCert.equals(chain[0])) {
+                throw new CertificateException("Server certificate does not match the expected certificate.");
+            }
+
+            chain[0].checkValidity();
+        }
+
+        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+            $validate(chain, authType);
+        }
+
+        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+            $validate(chain, authType);
+        }
+
+        public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0];
+        }
+    }
+
+    private final FuseContext $context;
     private String $pluginID;
     private String $apiSecret;
+    private final FuseTrustManager $tm;
 
     private PollingWait $waiter;
     private String $api;
@@ -141,9 +179,7 @@ public class FuseTestAPIClient {
     private static final String API_ENDPOINT_BASE = "https://localhost";
     private static final String SECRET_HEADER = "X-Fuse-Secret";
 
-    private FuseContext $context;
-
-    public FuseTestAPIClient(FuseContext context, String pluginID, int port, String secret, String endpoint, byte[] content, String type) throws NoSuchAlgorithmException, KeyManagementException {
+    public FuseTestAPIClient(FuseContext context, String pluginID, int port, String secret, String endpoint, byte[] content, String type) {
         $context = context;
         $pluginID = pluginID;
         $port = port;
@@ -151,33 +187,55 @@ public class FuseTestAPIClient {
         $api = endpoint;
         $content = content;
         $type = type;
+        $tm = new FuseTrustManager($context.getAPICertificate());
         $bgThread = Executors.newSingleThreadExecutor();
 
-        TrustManager[] trustAllCertificates = new TrustManager[]{
-                new X509TrustManager() {
-                    @Override
-                    public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {}
+//        X509Certificate cert = $context.getAPICertificate();
 
-                    @Override
-                    public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {}
+        try {
 
-                    @Override
-                    public X509Certificate[] getAcceptedIssuers() {
-                        return new X509Certificate[0];
-                    }
-                }
-        };
+            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+            ks.load(null, null);
+            ks.setCertificateEntry("fuse-api-certificate", $context.getAPICertificate());
 
-        if ($httpClient == null) {
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, trustAllCertificates, new java.security.SecureRandom());
-            $httpClient = new OkHttpClient.Builder()
-                    .connectTimeout(10, TimeUnit.SECONDS)
-                    .readTimeout(60, TimeUnit.SECONDS)
-                    .writeTimeout(60, TimeUnit.SECONDS)
-                    .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustAllCertificates[0])
-                    .hostnameVerifier((hostname, session) -> true) // Allow all hostnames
-                    .build();
+            TrustManagerFactory tmFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmFactory.init(ks);
+
+//            TrustManager[] trustAllCertificates = new TrustManager[]{
+//                    new X509TrustManager() {
+//                        @Override
+//                        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {}
+//
+//                        @Override
+//                        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {}
+//
+//                        @Override
+//                        public X509Certificate[] getAcceptedIssuers() {
+//                            return new X509Certificate[0];
+//                        }
+//                    }
+//            };
+
+            if ($httpClient == null) {
+                SSLContext sslContext = SSLContext.getInstance("TLS");
+                TrustManager[] tms = new TrustManager[]{
+//                    tmFactory.getTrustManagers()[0],
+                    $tm
+                };
+//                TrustManager tm = tmFactory.getTrustManagers()[0];
+
+                sslContext.init(null, tms, new java.security.SecureRandom());
+                $httpClient = new OkHttpClient.Builder()
+                        .connectTimeout(10, TimeUnit.SECONDS)
+                        .readTimeout(60, TimeUnit.SECONDS)
+                        .writeTimeout(60, TimeUnit.SECONDS)
+                        .sslSocketFactory(sslContext.getSocketFactory(), $tm)
+                        .hostnameVerifier((hostname, session) -> true) // Allow all hostnames
+                        .build();
+            }
+        }
+        catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException | CertificateException | IOException ex) {
+            throw new RuntimeException("Unable to build FuseTestAPIClient", ex);
         }
     }
 

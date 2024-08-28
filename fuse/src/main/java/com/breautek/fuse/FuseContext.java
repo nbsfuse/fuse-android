@@ -47,6 +47,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -342,6 +343,10 @@ public class FuseContext {
     @JavascriptInterface
     public void setLogCallback(String callbackID) {
         $logger.setCallbackID(callbackID);
+    }
+
+    public X509Certificate getAPICertificate() {
+        return $apiServer.getCertificate();
     }
 
     @JavascriptInterface
