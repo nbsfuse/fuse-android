@@ -28,6 +28,14 @@ public class FuseError extends Throwable {
     private final String $message;
 
     public FuseError(String domain, int code, String message) {
+        super(message);
+        $domain = domain;
+        $code = code;
+        $message = message;
+    }
+
+    public FuseError(String domain, int code, String message, Throwable cause) {
+        super(message, cause);
         $domain = domain;
         $code = code;
         $message = message;
